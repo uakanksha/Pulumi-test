@@ -1,0 +1,14 @@
+name: lab08
+description: description
+runtime: yaml
+resources:
+  # Create an AWS resource (S3 Bucket)
+  my-bucket:
+    type: aws:s3:BucketV2
+outputs:
+  # Export the name of the bucket
+  bucketName: ${my-bucket.id}
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: aws-yaml
