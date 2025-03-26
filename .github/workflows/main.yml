@@ -1,51 +1,36 @@
-name: Deploy Static Website with Pulumi
+name: main
 
 on:
   push:
     branches:
-      - main  # Adjust if needed
-  workflow_dispatch:  # Allows manual trigger
+      - main
+  workflow_dispatch:
 
 jobs:
-  pulumi-deploy:
+  pulumi-up:
+    name: pulumi-up
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Pulumi CLI
-        uses: pulumi/actions@v5  # Correct Pulumi action
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
-      - name: Login to Pulumi
-        run: pulumi login --cloud-url https://app.pulumi.com
+      - name: Install Dependencies
+        working-directory: ./ppinfra
+        run: npm install
+
+      - uses: pulumi/actions@v5
+        with:
+          command: up  # Changed from 'destroy' to 'up' for deployment
+          stack-name: uakanksha/lab08/deve
+          work-dir: ./ppinfra
         env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}  # ✅ Add the secret here
-
-      - name: Select Pulumi stack
-        run: pulumi stack select lab08/deve
-
-      - name: Deploy infrastructure
-        run: pulumi up --yes
-
-  pulumi-destroy:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'  # Manual trigger
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Pulumi CLI
-        uses: pulumi/actions@v5  # Correct Pulumi action
-
-      - name: Login to Pulumi
-        run: pulumi login --cloud-url https://app.pulumi.com
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}  # ✅ Add the secret here
-
-      - name: Select Pulumi stack
-        run: pulumi stack select lab08/deve
-
-      - name: Destroy infrastructure
-        run: pulumi destroy --yes
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          # If you do not have Pulumi ESC configured, uncomment below:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
