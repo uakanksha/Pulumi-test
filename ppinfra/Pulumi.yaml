@@ -1,10 +1,14 @@
-name: myworkshop
-description: A TypeScript program to deploy a static website on AWS
-runtime:
-  name: nodejs
-  options:
-    packagemanager: npm
+name: lab08
+description: description
+runtime: yaml
+resources:
+  # Create an AWS resource (S3 Bucket)
+  my-bucket:
+    type: aws:s3:BucketV2
+outputs:
+  # Export the name of the bucket
+  bucketName: ${my-bucket.id}
 config:
   pulumi:tags:
     value:
-      pulumi:template: static-website-aws-typescript
+      pulumi:template: aws-yaml
