@@ -1,40 +1,15 @@
-name: Pulumi Deploy
+name: lab08
+runtime: yaml
+description: A static website on AWS S3 and CloudFront using Pulumi
 
-on:
-  push:
-    branches:
-      - main
+resources:
+  my-bucket:
+    type: aws:s3:BucketV2
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
+outputs:
+  bucketName: ${my-bucket.id}
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Pulumi CLI
-        uses: pulumi/actions@v5
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Login to Pulumi Cloud
-        run: pulumi login
-
-      - name: Select Pulumi Stack
-        run: pulumi stack select lab08/deve
-
-      - name: Set AWS Region
-        run: pulumi config set aws:region us-east-1
-
-      - name: Deploy to AWS
-        run: pulumi up --yes
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: aws-yaml
