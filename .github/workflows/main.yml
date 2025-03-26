@@ -1,37 +1,79 @@
-name: main
+name: lab08
+runtime: yaml
+description: Deploy a static website using S3 and CloudFront with Pulumi YAML
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+resources:
+  myBucket:
+    type: aws:s3:BucketV2
 
-jobs:
-  pulumi-up:
-    name: pulumi-up
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  myBucketPublicAccess:
+    type: aws:s3:BucketPublicAccessBlock
+    properties:
+      bucket: ${myBucket.id}
+      blockPublicAcls: false
+      blockPublicPolicy: false
+      ignorePublicAcls: false
+      restrictPublicBuckets: false
 
-      - name: Set up Node.js 18
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
+  myBucketWebsite:
+    type: aws:s3:BucketWebsiteConfigurationV2
+    properties:
+      bucket: ${myBucket.id}
+      indexDocument:
+        suffix: index.html
+      errorDocument:
+        key: error.html
 
-      - name: Install Dependencies
-        working-directory: ./ppinfra
-        run: npm install
+  myBucketPolicy:
+    type: aws:s3:BucketPolicy
+    properties:
+      bucket: ${myBucket.id}
+      policy: ${jsonencode({
+        "Version": "2012-10-17",
+        "Statement": [{
+          "Effect": "Allow",
+          "Principal": "*",
+          "Action": "s3:GetObject",
+          "Resource": "arn:aws:s3:::${myBucket.id}/*"
+        }]
+      })}
 
-      - uses: pulumi/actions@v5
-        with:
-          command: destroy
-          stack-name: uakanksha/lab08/deve
-          work-dir: ./ppinfra
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          # If you do not have Pulumi ESC configured then uncomment: 
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+  myCloudFrontOAC:
+    type: aws:cloudfront:OriginAccessControl
+    properties:
+      name: my-oac
+      description: "CloudFront OAC for S3"
+      originAccessControlOriginType: "s3"
+      signingBehavior: "always"
+      signingProtocol: "sigv4"
 
+  myCloudFrontDistribution:
+    type: aws:cloudfront:Distribution
+    properties:
+      enabled: true
+      defaultRootObject: index.html
+      origins:
+        - domainName: ${myBucket.bucketRegionalDomainName}
+          originAccessControlId: ${myCloudFrontOAC.id}
+          s3OriginConfig: {}
+      defaultCacheBehavior:
+        viewerProtocolPolicy: "redirect-to-https"
+        allowedMethods: ["GET", "HEAD"]
+        cachedMethods: ["GET", "HEAD"]
+        targetOriginId: ${myBucket.id}
+        forwardedValues:
+          queryString: false
+          cookies:
+            forward: "none"
+      priceClass: "PriceClass_100"
+      viewerCertificate:
+        cloudfrontDefaultCertificate: true
+
+outputs:
+  bucketName: ${myBucket.id}
+  cloudFrontURL: https://${myCloudFrontDistribution.domainName}
+
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: aws-yaml
