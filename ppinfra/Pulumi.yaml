@@ -1,14 +1,40 @@
-name: lab08
-description: description
-runtime: yaml
-resources:
-  # Create an AWS resource (S3 Bucket)
-  my-bucket:
-    type: aws:s3:BucketV2
-outputs:
-  # Export the name of the bucket
-  bucketName: ${my-bucket.id}
-config:
-  pulumi:tags:
-    value:
-      pulumi:template: aws-yaml
+name: Pulumi Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Pulumi CLI
+        uses: pulumi/actions@v5
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Login to Pulumi Cloud
+        run: pulumi login
+
+      - name: Select Pulumi Stack
+        run: pulumi stack select lab08/deve
+
+      - name: Set AWS Region
+        run: pulumi config set aws:region us-east-1
+
+      - name: Deploy to AWS
+        run: pulumi up --yes
