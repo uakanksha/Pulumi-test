@@ -29,10 +29,14 @@ jobs:
       - name: Set AWS Region
         run: pulumi config set aws:region us-east-1  # Set AWS region
 
-      - uses: pulumi/actions@v5
+      - name: Select Pulumi Stack
+        run: pulumi stack select uakanksha/lab08/deve  # Select the stack
+
+      - name: Run Pulumi Up
+        uses: pulumi/actions@v5
         with:
           command: up
-          stack-name: uakanksha/lab08/deve
+          stack-name: uakanksha/lab08/deve  # Use your stack name here
           work-dir: ./ppinfra
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
