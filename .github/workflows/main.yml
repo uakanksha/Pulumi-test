@@ -1,79 +1,56 @@
-name: lab08
-runtime: yaml
-description: Deploy a static website using S3 and CloudFront with Pulumi YAML
+name: Deploy Static Website with Pulumi
 
-resources:
-  myBucket:
-    type: aws:s3:BucketV2
+on:
+  push:
+    branches:
+      - main  # Adjust to your branch name if needed
 
-  myBucketPublicAccess:
-    type: aws:s3:BucketPublicAccessBlock
-    properties:
-      bucket: ${myBucket.id}
-      blockPublicAcls: false
-      blockPublicPolicy: false
-      ignorePublicAcls: false
-      restrictPublicBuckets: false
+jobs:
+  pulumi-deploy:
+    runs-on: ubuntu-latest
 
-  myBucketWebsite:
-    type: aws:s3:BucketWebsiteConfigurationV2
-    properties:
-      bucket: ${myBucket.id}
-      indexDocument:
-        suffix: index.html
-      errorDocument:
-        key: error.html
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  myBucketPolicy:
-    type: aws:s3:BucketPolicy
-    properties:
-      bucket: ${myBucket.id}
-      policy: ${jsonencode({
-        "Version": "2012-10-17",
-        "Statement": [{
-          "Effect": "Allow",
-          "Principal": "*",
-          "Action": "s3:GetObject",
-          "Resource": "arn:aws:s3:::${myBucket.id}/*"
-        }]
-      })}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
-  myCloudFrontOAC:
-    type: aws:cloudfront:OriginAccessControl
-    properties:
-      name: my-oac
-      description: "CloudFront OAC for S3"
-      originAccessControlOriginType: "s3"
-      signingBehavior: "always"
-      signingProtocol: "sigv4"
+      - name: Install Pulumi CLI
+        uses: pulumi/setup-pulumi@v3
 
-  myCloudFrontDistribution:
-    type: aws:cloudfront:Distribution
-    properties:
-      enabled: true
-      defaultRootObject: index.html
-      origins:
-        - domainName: ${myBucket.bucketRegionalDomainName}
-          originAccessControlId: ${myCloudFrontOAC.id}
-          s3OriginConfig: {}
-      defaultCacheBehavior:
-        viewerProtocolPolicy: "redirect-to-https"
-        allowedMethods: ["GET", "HEAD"]
-        cachedMethods: ["GET", "HEAD"]
-        targetOriginId: ${myBucket.id}
-        forwardedValues:
-          queryString: false
-          cookies:
-            forward: "none"
-      priceClass: "PriceClass_100"
-      viewerCertificate:
-        cloudfrontDefaultCertificate: true
+      - name: Login to Pulumi
+        run: pulumi login --cloud-url https://app.pulumi.com
 
-outputs:
-  bucketName: ${myBucket.id}
-  cloudFrontURL: https://${myCloudFrontDistribution.domainName}
+      - name: Select Pulumi stack
+        run: pulumi stack select lab08/deve
 
-config:
-  pulumi:tags:
-    value:
-      pulumi:template: aws-yaml
+      - name: Deploy infrastructure
+        run: pulumi up --yes
+
+  pulumi-destroy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'  # Allows manual trigger for destruction
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Pulumi CLI
+        uses: pulumi/setup-pulumi@v3
+
+      - name: Login to Pulumi
+        run: pulumi login --cloud-url https://app.pulumi.com
+
+      - name: Select Pulumi stack
+        run: pulumi stack select lab08/deve
+
+      - name: Destroy infrastructure
+        run: pulumi destroy --yes
