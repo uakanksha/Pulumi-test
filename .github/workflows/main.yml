@@ -23,13 +23,16 @@ jobs:
         working-directory: ./ppinfra
         run: npm install
 
+      - name: Set PULUMI_ACCESS_TOKEN
+        run: echo "PULUMI_ACCESS_TOKEN=${{ secrets.PULUMI_ACCESS_TOKEN }}" >> $GITHUB_ENV  # Ensure token is available globally
+
       - name: Set AWS Region
-        run: pulumi config set aws:region us-east-1  # Replace with your desired AWS region
+        run: pulumi config set aws:region us-east-1  # Set AWS region
 
       - uses: pulumi/actions@v5
         with:
           command: up
-          stack-name: uakanksha/lab08/deve
+          stack-name: mishu22bd/myworkshop/dev
           work-dir: ./ppinfra
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
