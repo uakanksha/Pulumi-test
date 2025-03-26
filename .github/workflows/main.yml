@@ -3,7 +3,8 @@ name: Deploy Static Website with Pulumi
 on:
   push:
     branches:
-      - main  # Adjust to your branch name if needed
+      - main  # Adjust if needed
+  workflow_dispatch:  # Allows manual trigger
 
 jobs:
   pulumi-deploy:
@@ -13,13 +14,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
       - name: Install Pulumi CLI
-        uses: pulumi/setup-pulumi@v3
+        uses: pulumi/actions@v5  # ✅ Correct Pulumi action
 
       - name: Login to Pulumi
         run: pulumi login --cloud-url https://app.pulumi.com
@@ -32,19 +28,14 @@ jobs:
 
   pulumi-destroy:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'  # Allows manual trigger for destruction
+    if: github.event_name == 'workflow_dispatch'  # Manual trigger
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
       - name: Install Pulumi CLI
-        uses: pulumi/setup-pulumi@v3
+        uses: pulumi/actions@v5  # ✅ Correct Pulumi action
 
       - name: Login to Pulumi
         run: pulumi login --cloud-url https://app.pulumi.com
