@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  pulumi-up:
-    name: pulumi-up
+  pulumi-destroy:
+    name: pulumi-destroy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
