@@ -19,14 +19,17 @@ resources:
   # Create an S3 bucket and configure it as a website.
   bucket:
     type: aws:s3:BucketV2
+
+  # Configure the S3 bucket as a website with error and index documents.
   bucketWebsite:
     properties:
       bucket: ${bucket.bucket}
       errorDocument:
-        suffix: ${errorDocument}
+        key: ${errorDocument}  # Corrected key for error document
       indexDocument:
-        key: ${indexDocument}
+        suffix: ${indexDocument}  # Corrected suffix for index document
     type: aws:s3:BucketWebsiteConfigurationV2
+
   # Assign ownership controls to the new S3 bucket
   ownership-controls:
     properties:
@@ -34,12 +37,14 @@ resources:
       rule:
         objectOwnership: ObjectWriter
     type: aws:s3:BucketOwnershipControls
+
   # Configure the public access block for the new S3 bucket
   public-access-block:
     properties:
       bucket: ${bucket.id}
       blockPublicAcls: false
     type: aws:s3:BucketPublicAccessBlock
+
   # Use a synced folder to manage the files of the website.
   bucket-folder:
     options:
@@ -51,6 +56,7 @@ resources:
       bucketName: ${bucket.bucket}
       path: ${path}
     type: synced-folder:index:S3BucketFolder
+
   # Create a CloudFront CDN to distribute and cache the website.
   cdn:
     type: aws:cloudfront:Distribution
@@ -88,12 +94,13 @@ resources:
       customErrorResponses:
         - errorCode: 404
           responseCode: 404
-          responsePagePath: /${errorDocument}
+          responsePagePath: /${errorDocument}  # Correctly reference error document
       restrictions:
         geoRestriction:
           restrictionType: none
       viewerCertificate:
         cloudfrontDefaultCertificate: true
+
 # Export the URLs and hostnames of the bucket and distribution.
 outputs:
   originURL: http://${bucketWebsite.websiteEndpoint}
