@@ -37,7 +37,7 @@ jobs:
       - name: Run Pulumi Up (Deploy)
         uses: pulumi/actions@v5
         with:
-          command: destroy
+          command: up
           stack-name: uakanksha/lab08/deve
           work-dir: ./ppinfra
           upsert: true  # Ensures stack is created if it doesn’t exist
